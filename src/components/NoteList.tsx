@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useNotes } from '../context/NotesContext';
+import { ConfirmDialog } from './ConfirmDialog';
 import { NoteItem } from './NoteItem';
 
 interface NoteListProps {
@@ -8,6 +10,7 @@ interface NoteListProps {
 
 export function NoteList({ selectedNoteId, onSelect }: NoteListProps) {
   const { notes, loading, error, deleteNote } = useNotes();
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -38,9 +41,19 @@ export function NoteList({ selectedNoteId, onSelect }: NoteListProps) {
           note={note}
           isSelected={note.id === selectedNoteId}
           onSelect={onSelect}
-          onDelete={deleteNote}
+          onDelete={setPendingDeleteId}
         />
       ))}
+      {pendingDeleteId && (
+        <ConfirmDialog
+          message="이 노트를 삭제하시겠습니까?"
+          onConfirm={() => {
+            deleteNote(pendingDeleteId);
+            setPendingDeleteId(null);
+          }}
+          onCancel={() => setPendingDeleteId(null)}
+        />
+      )}
     </>
   );
 }
