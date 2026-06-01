@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notes App — Architecture</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      padding: 48px 24px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 14px;
+      color: #6e6e73;
+      margin-bottom: 48px;
+    }
+
+    .section {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      max-width: 960px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .section + .section { margin-top: 32px; }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6e6e73;
+      margin-bottom: 24px;
+    }
+
+    .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e5ea;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #6e6e73;
+    }
+
+    .legend-line {
+      width: 28px;
+      height: 2px;
+    }
+
+    .legend-line.solid { background: #1d1d1f; }
+    .legend-line.dashed {
+      background: repeating-linear-gradient(
+        90deg, #6e6e73 0px, #6e6e73 6px, transparent 6px, transparent 10px
+      );
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Notes App</h1>
+  <p class="subtitle">React 19 · TypeScript · Vite · json-server</p>
+
+  <!-- 1. 컴포넌트 의존성 -->
+  <div class="section">
+    <p class="section-title">컴포넌트 의존성</p>
+    <div class="mermaid">
+graph TD
+  main["<b>main.tsx</b>\nStrictMode"]
+  App["<b>App.tsx</b>\nstate: selectedNoteId\nstate: isCreating"]
+  Provider["<b>NotesProvider</b>\nstate: notes[]\nstate: loading · error"]
+  Layout["<b>Layout</b>\nslots: sidebar · main\nCallback: onNewNote"]
+  NoteList["<b>NoteList</b>\nuseNotes()"]
+  NoteItem["<b>NoteItem</b>\nprops only — no context"]
+  NoteEditor["<b>NoteEditor</b>\nuseNotes()"]
+  Context[("NotesContext\ncreateNote\nupdateNote\ndeleteNote")]
+  API["<b>api/notes.ts</b>\nfetch() wrapper"]
+  Server[("json-server\nlocalhost:3001")]
+
+  main --> App
+  App --> Provider
+  Provider --> Layout
+  Layout -->|"sidebar prop"| NoteList
+  Layout -->|"main prop"| NoteEditor
+  NoteList --> NoteItem
+
+  Provider -. "provides" .-> Context
+  NoteList -. "useNotes()" .-> Context
+  NoteEditor -. "useNotes()" .-> Context
+
+  Context --> API
+  API -->|"fetch()"| Server
+
+  style main    fill:#f0f0f0,stroke:#ccc,color:#333
+  style App     fill:#dbeafe,stroke:#93c5fd,color:#1e40af
+  style Provider fill:#ede9fe,stroke:#c4b5fd,color:#5b21b6
+  style Context  fill:#ede9fe,stroke:#c4b5fd,color:#5b21b6
+  style Layout   fill:#dcfce7,stroke:#86efac,color:#166534
+  style NoteList fill:#dcfce7,stroke:#86efac,color:#166534
+  style NoteItem fill:#dcfce7,stroke:#86efac,color:#166534
+  style NoteEditor fill:#dcfce7,stroke:#86efac,color:#166534
+  style API      fill:#fef3c7,stroke:#fcd34d,color:#92400e
+  style Server   fill:#fee2e2,stroke:#fca5a5,color:#991b1b
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-line solid"></div>props / 렌더 관계</div>
+      <div class="legend-item"><div class="legend-line dashed"></div>Context 구독 (useNotes)</div>
+    </div>
+  </div>
+
+  <!-- 2. 상태 흐름 -->
+  <div class="section">
+    <p class="section-title">상태 흐름</p>
+    <div class="mermaid">
+stateDiagram-v2
+  direction LR
+
+  [*] --> Idle : 앱 초기화\n(fetchNotes)
+
+  Idle --> Creating : + 새 노트 클릭\nisCreating = true
+
+  Idle --> Editing : 노트 클릭\nselectedNoteId = id
+
+  Creating --> Idle : 취소
+  Editing  --> Idle : 취소
+
+  Creating --> Saving : 저장 클릭\ncreateNote()
+  Editing  --> Saving : 저장 클릭\nupdateNote()
+
+  Saving --> Idle : 성공\nsetNotes 갱신
+
+  Idle --> Idle : 삭제 클릭\ndeleteNote() → setNotes 갱신
+    </div>
+  </div>
+
+  <!-- 3. CRUD 데이터 흐름 -->
+  <div class="section">
+    <p class="section-title">CRUD 데이터 흐름</p>
+    <div class="mermaid">
+sequenceDiagram
+  actor User
+  participant Editor as NoteEditor
+  participant List   as NoteList
+  participant Ctx    as NotesContext
+  participant API    as api/notes.ts
+  participant DB     as json-server
+
+  Note over User,DB: 노트 생성
+  User  ->> Editor : 제목·내용 입력 후 저장
+  Editor ->> Ctx   : createNote(title, content)
+  Ctx   ->> API    : createNote({title, content})
+  API   ->> DB     : POST /notes
+  DB   -->> API    : 201 · Note (id 포함)
+  API  -->> Ctx    : Note
+  Ctx  ->> Ctx     : setNotes([...prev, newNote])
+  Ctx  -->> Editor : onDone()
+
+  Note over User,DB: 노트 수정
+  User  ->> Editor : 내용 변경 후 저장
+  Editor ->> Ctx   : updateNote(id, {title, content})
+  Ctx   ->> API    : updateNote(id, updates)
+  API   ->> DB     : PATCH /notes/:id
+  DB   -->> API    : 200 · Note
+  API  -->> Ctx    : Note
+  Ctx  ->> Ctx     : setNotes(prev.map → updated)
+
+  Note over User,DB: 노트 삭제
+  User  ->> List   : 삭제 클릭
+  List  ->> Ctx    : deleteNote(id)
+  Ctx  ->> API     : deleteNote(id)
+  API  ->> DB      : DELETE /notes/:id
+  DB  -->> API     : 200
+  Ctx ->> Ctx      : setNotes(prev.filter)
+    </div>
+  </div>
+
+  <!-- 4. 레이어 구조 -->
+  <div class="section">
+    <p class="section-title">레이어 구조</p>
+    <div class="mermaid">
+graph LR
+  subgraph UI["UI Layer  (src/components/)"]
+    direction TB
+    Layout
+    NoteList
+    NoteItem
+    NoteEditor
+  end
+
+  subgraph State["State Layer  (src/context/)"]
+    NotesContext
+  end
+
+  subgraph APILayer["API Layer  (src/api/)"]
+    notes["notes.ts\ncreateNote · updateNote · deleteNote · fetchNotes"]
+  end
+
+  subgraph Types["Types  (src/types/)"]
+    Note["Note interface"]
+  end
+
+  subgraph Backend["Backend"]
+    Server["json-server\ndb.json"]
+  end
+
+  UI --> State
+  State --> APILayer
+  APILayer --> Backend
+  Types -. "used by all" .-> UI
+  Types -. "used by all" .-> State
+  Types -. "used by all" .-> APILayer
+
+  style UI       fill:#dcfce7,stroke:#86efac,color:#166534
+  style State    fill:#ede9fe,stroke:#c4b5fd,color:#5b21b6
+  style APILayer fill:#fef3c7,stroke:#fcd34d,color:#92400e
+  style Types    fill:#f0f0f0,stroke:#ccc,color:#333
+  style Backend  fill:#fee2e2,stroke:#fca5a5,color:#991b1b
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#dbeafe',
+        primaryTextColor: '#1e40af',
+        lineColor: '#6e6e73',
+        fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
+        fontSize: '14px',
+      },
+      flowchart: { curve: 'basis', padding: 20 },
+      sequence: { actorMargin: 60, messageMargin: 20 },
+    });
+  </script>
+</body>
+</html>
