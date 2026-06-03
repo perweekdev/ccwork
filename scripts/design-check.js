@@ -88,15 +88,13 @@ function checkFile(filePath) {
     process.exit(0);
   }
 
-  console.log(`[design-check] ${normalized} — ${violations.length}건 위반 발견\n`);
-  for (const v of violations) {
-    console.log(`✗ Line ${v.lineNum}: ${v.rule}`);
-    console.log(`  코드: ${v.content}`);
-    console.log(`  수정: ${v.fix}\n`);
-  }
+  const summary = violations.map((v) => `✗ L${v.lineNum}:${v.rule}`).join(' | ');
+  process.stderr.write(`[design-check] ${violations.length}건 위반 — ${summary}\n`);
+  process.exit(1);
 }
 
 // 듀얼 모드: CLI 인자(Skill) 또는 stdin JSON(Hook)
+fs.appendFileSync('design-check.log', `[${new Date().toISOString()}] hook triggered\n`);
 const cliArg = process.argv[2];
 
 if (cliArg) {

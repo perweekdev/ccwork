@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/design-check.js"
+            "command": "node C:/Users/kmw/desktop/git/ccwork/scripts/design-check.js"
           }
         ]
       }
