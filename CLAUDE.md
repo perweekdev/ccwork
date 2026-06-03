@@ -56,6 +56,20 @@ interface Note {
 
 Tailwind CSS v4 (`@tailwindcss/vite` 플러그인 방식). 별도 `tailwind.config.*` 파일 없음. 시맨틱 컬러 토큰(`text-foreground`, `bg-card`, `text-muted-foreground` 등)을 사용한다.
 
+## 스타일 작업
+
+스타일 관련 작업(컴포넌트 생성, 색상·레이아웃 수정 등) 시 반드시 아래 디자인 스킬 중 **하나 이상**을 활용한다.
+
+| 스킬                          | 용도                                                                   |
+| ----------------------------- | ---------------------------------------------------------------------- |
+| `/design-check <파일경로>`    | 작업 완료 후 디자인 규칙 위반 점검                                     |
+| `/new-component <컴포넌트명>` | 디자인 시스템 패턴으로 컴포넌트 스캐폴딩                               |
+| `/token-add <이름> <값>`      | 새 토큰을 `src/index.css`와 `docs/design-system/tokens.md`에 동시 추가 |
+
+전체 디자인 시스템 문서: `docs/design-system/`
+
+@docs/design-system/rules.md
+
 ## 테스트
 
 - Vitest + Testing Library + jsdom
@@ -73,11 +87,11 @@ Tailwind CSS v4 (`@tailwindcss/vite` 플러그인 방식). 별도 `tailwind.conf
 
 ### 상태 관리
 
-| 상태 종류 | 위치 |
-|---|---|
-| 서버 데이터 (`notes[]`, `loading`, `error`) | `NotesContext` |
-| 전역 UI 선택 상태 (`selectedNoteId`, `isCreating`) | `App.tsx` local state |
-| 폼 입력값 (`title`, `content`, `saving`) | `NoteEditor` local state |
+| 상태 종류                                          | 위치                     |
+| -------------------------------------------------- | ------------------------ |
+| 서버 데이터 (`notes[]`, `loading`, `error`)        | `NotesContext`           |
+| 전역 UI 선택 상태 (`selectedNoteId`, `isCreating`) | `App.tsx` local state    |
+| 폼 입력값 (`title`, `content`, `saving`)           | `NoteEditor` local state |
 
 - 상태는 필요한 최소 범위에 둔다. Context는 서버 동기화 목적에만 사용.
 - 낙관적 업데이트 없음. API 호출 성공 후 `setNotes`로 로컬 상태를 직접 갱신한다 (refetch 없음).
@@ -97,6 +111,27 @@ Tailwind CSS v4 (`@tailwindcss/vite` 플러그인 방식). 별도 `tailwind.conf
 - **로컬 핸들러 함수**: `handle` 접두사 (`handleSave`, `handleSelectNote`, `handleDone`).
 - **불리언 state/props**: `is` 접두사 (`isCreating`, `isSelected`).
 - **커스텀 hook**: `use` 접두사 (`useNotes`).
+
+## 커밋 메시지 규칙
+
+commitlint (`@commitlint/config-conventional`) + husky `commit-msg` hook으로 강제된다.
+
+```
+타입: 제목 (필수)
+
+본문 첫 번째 줄 (필수)
+본문 두 번째 줄 (필수, 최소 2줄)
+```
+
+| 타입       | 용도                                 |
+| ---------- | ------------------------------------ |
+| `feat`     | 새 기능                              |
+| `fix`      | 버그 수정                            |
+| `chore`    | 빌드·설정·패키지 변경                |
+| `docs`     | 문서                                 |
+| `refactor` | 동작 변경 없는 코드 정리             |
+| `test`     | 테스트 추가·수정                     |
+| `style`    | 포맷·세미콜론 등 코드 의미 없는 변경 |
 
 ## 일관성이 없는 패턴 (주의)
 
