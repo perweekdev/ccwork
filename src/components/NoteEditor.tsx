@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNotes } from '../context/NotesContext';
+import { useTagInput } from '../hooks/useTagInput';
+import { TagInput } from './TagInput';
 
 interface NoteEditorProps {
   selectedNoteId: string | null;
@@ -14,15 +16,20 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
   const [saving, setSaving] = useState(false);
 
   const selectedNote = notes.find((n) => n.id === selectedNoteId);
+  const { tags, setTags, inputValue, setInputValue, removeTag, handleKeyDown } = useTagInput(
+    selectedNote?.tags ?? [],
+  );
 
   // 선택된 노트가 바뀔 때 폼 동기화
   useEffect(() => {
     if (selectedNote) {
       setTitle(selectedNote.title);
       setContent(selectedNote.content);
+      setTags(selectedNote.tags);
     } else if (isCreating) {
       setTitle('');
       setContent('');
+      setTags([]);
     }
   }, [selectedNoteId, isCreating]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -54,9 +61,7 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
       <div className="flex items-center justify-center h-full">
         <div className="text-center space-y-3">
           <p className="text-5xl">📝</p>
-          <p className="text-muted-foreground text-sm">
-            노트를 선택하거나 새 노트를 만드세요
-          </p>
+          <p className="text-muted-foreground text-sm">노트를 선택하거나 새 노트를 만드세요</p>
         </div>
       </div>
     );
@@ -80,6 +85,17 @@ export function NoteEditor({ selectedNoteId, isCreating, onDone }: NoteEditorPro
 
       {/* 구분선 */}
       <div className="h-px bg-border mb-4" />
+
+      {/* 태그 입력 */}
+      <div data-testid="tag-input" className="mb-4">
+        <TagInput
+          tags={tags}
+          inputValue={inputValue}
+          onInputChange={setInputValue}
+          onKeyDown={handleKeyDown}
+          onRemove={removeTag}
+        />
+      </div>
 
       {/* 내용 입력 */}
       <textarea
