@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { NoteEditor } from './NoteEditor';
+
+const { createNoteMock, updateNoteMock } = vi.hoisted(() => ({
+  createNoteMock: vi.fn(),
+  updateNoteMock: vi.fn(),
+}));
 
 vi.mock('../context/NotesContext', () => ({
   useNotes: () => ({
@@ -17,8 +23,8 @@ vi.mock('../context/NotesContext', () => ({
     ],
     loading: false,
     error: null,
-    createNote: vi.fn(),
-    updateNote: vi.fn(),
+    createNote: createNoteMock,
+    updateNote: updateNoteMock,
     deleteNote: vi.fn(),
   }),
 }));
@@ -54,5 +60,69 @@ describe('NoteEditor', () => {
 
     rerender(<NoteEditor selectedNoteId={null} isCreating={true} onDone={onDone} />);
     expect(screen.queryByText('react')).not.toBeInTheDocument();
+  });
+});
+
+// Issue 4: 태그 포함 일괄 저장
+
+describe('NoteEditor.handleSave — createNote에 tags 전달', () => {
+  it('should call createNote with tags array when save is clicked in create mode', async () => {
+    const user = userEvent.setup();
+    render(<NoteEditor selectedNoteId={null} isCreating={true} onDone={onDone} />);
+
+    const tagInputEl = within(screen.getByTestId('tag-input')).getByRole('textbox');
+    await user.type(tagInputEl, 'vue');
+    await user.keyboard('{Enter}');
+
+    await user.type(screen.getByPlaceholderText('제목'), '새 노트');
+
+    await user.click(screen.getByRole('button', { name: '저장' }));
+
+    expect(createNoteMock).toHaveBeenCalledWith('새 노트', '', ['vue']);
+  });
+
+  it('should call createNote with empty tags array when no tags are added in create mode', async () => {
+    const user = userEvent.setup();
+    render(<NoteEditor selectedNoteId={null} isCreating={true} onDone={onDone} />);
+
+    await user.type(screen.getByPlaceholderText('제목'), '새 노트');
+
+    await user.click(screen.getByRole('button', { name: '저장' }));
+
+    expect(createNoteMock).toHaveBeenCalledWith('새 노트', '', []);
+  });
+});
+
+describe('NoteEditor.handleSave — updateNote에 tags 전달', () => {
+  it('should call updateNote with updates including tags array when save is clicked in edit mode', async () => {
+    const user = userEvent.setup();
+    render(<NoteEditor selectedNoteId="1" isCreating={false} onDone={onDone} />);
+
+    await user.click(screen.getByRole('button', { name: '저장' }));
+
+    expect(updateNoteMock).toHaveBeenCalledWith('1', {
+      title: 'Note 1',
+      content: 'Body',
+      tags: ['react', 'work'],
+    });
+  });
+});
+
+describe('NoteEditor — 저장 없이 이동 시 태그 변경 폐기', () => {
+  it('should discard unsaved tag changes when switching to a different note', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <NoteEditor selectedNoteId="1" isCreating={false} onDone={onDone} />,
+    );
+
+    const tagInputEl = within(screen.getByTestId('tag-input')).getByRole('textbox');
+    await user.type(tagInputEl, 'unsaved');
+    await user.keyboard('{Enter}');
+    expect(screen.getByText('unsaved')).toBeInTheDocument();
+
+    rerender(<NoteEditor selectedNoteId="2" isCreating={false} onDone={onDone} />);
+
+    expect(screen.queryByText('unsaved')).not.toBeInTheDocument();
+    expect(updateNoteMock).not.toHaveBeenCalled();
   });
 });
