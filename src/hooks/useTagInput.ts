@@ -5,8 +5,11 @@ export function useTagInput(initialTags: string[]) {
   const [inputValue, setInputValue] = useState('');
 
   const addTag = (value: string) => {
-    if (!value) return;
-    setTags((prev) => [...prev, value]);
+    const normalized = value.toLowerCase().trim().replace(/\s+/g, '');
+    if (normalized === '') return;
+    if (normalized.length > 20) return;
+    if (tags.includes(normalized)) return;
+    setTags((prev) => [...prev, normalized]);
     setInputValue('');
   };
 

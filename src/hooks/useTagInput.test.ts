@@ -104,3 +104,75 @@ describe('useTagInput.handleKeyDown', () => {
     expect(result.current.tags).toEqual([]);
   });
 });
+
+// Issue 3: 태그 입력 검증 (normalize & 중복 방지)
+
+describe('useTagInput.addTag — normalize', () => {
+  it('should store normalized value when input has uppercase letters', () => {
+    const { result } = renderHook(() => useTagInput([]));
+    act(() => {
+      result.current.addTag(' React JS ');
+    });
+    expect(result.current.tags).toEqual(['reactjs']);
+  });
+
+  it('should clear inputValue after adding normalized tag', () => {
+    const { result } = renderHook(() => useTagInput([]));
+    act(() => {
+      result.current.setInputValue(' React JS ');
+    });
+    act(() => {
+      result.current.addTag(' React JS ');
+    });
+    expect(result.current.inputValue).toBe('');
+    expect(result.current.tags).toContain('reactjs');
+  });
+});
+
+describe('useTagInput.addTag — 길이 검증', () => {
+  it('should add tag when normalized length is exactly 20 characters', () => {
+    const { result } = renderHook(() => useTagInput([]));
+    const twentyChars = 'a'.repeat(20);
+    act(() => {
+      result.current.addTag(twentyChars);
+    });
+    expect(result.current.tags).toEqual([twentyChars]);
+  });
+
+  it('should not add tag when normalized length exceeds 20 characters', () => {
+    const { result } = renderHook(() => useTagInput([]));
+    const twentyOneChars = 'a'.repeat(21);
+    act(() => {
+      result.current.addTag(twentyOneChars);
+    });
+    expect(result.current.tags).toEqual([]);
+  });
+});
+
+describe('useTagInput.addTag — 공백 입력 거부', () => {
+  it('should not add tag when input is whitespace-only string', () => {
+    const { result } = renderHook(() => useTagInput([]));
+    act(() => {
+      result.current.addTag('   ');
+    });
+    expect(result.current.tags).toEqual([]);
+  });
+});
+
+describe('useTagInput.addTag — 중복 방지', () => {
+  it('should not add tag when normalized value already exists in tags array', () => {
+    const { result } = renderHook(() => useTagInput(['react']));
+    act(() => {
+      result.current.addTag('react');
+    });
+    expect(result.current.tags).toEqual(['react']);
+  });
+
+  it('should not add tag when input differs only in case from existing tag', () => {
+    const { result } = renderHook(() => useTagInput(['react']));
+    act(() => {
+      result.current.addTag('REACT');
+    });
+    expect(result.current.tags).toEqual(['react']);
+  });
+});
