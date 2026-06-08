@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import React from 'react';
+import { useState, KeyboardEvent } from 'react';
 
 export function useTagInput(initialTags: string[]) {
   const [tags, setTags] = useState<string[]>(initialTags);
@@ -15,7 +14,7 @@ export function useTagInput(initialTags: string[]) {
     setTags((prev) => prev.filter((t) => t !== tag));
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       addTag(inputValue);

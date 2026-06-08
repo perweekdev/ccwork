@@ -1,10 +1,10 @@
-import React from 'react';
+import { KeyboardEvent } from 'react';
 
 interface TagInputProps {
   tags: string[];
   inputValue: string;
   onInputChange: (value: string) => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   onRemove: (tag: string) => void;
 }
 
