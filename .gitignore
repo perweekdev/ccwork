@@ -31,3 +31,13 @@ dist-ssr/
 *.sln
 *.sw?
 .excalidraw.json
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Test coverage
+/coverage/
