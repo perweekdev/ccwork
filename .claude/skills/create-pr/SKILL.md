@@ -1,6 +1,6 @@
 ---
 name: create-pr
-description: 현재 브랜치의 변경사항을 분석해 PR 초안을 생성하고, E2E 테스트 통과 후 GitHub PR을 생성한다. "PR 만들어줘", "PR 올려줘", "PR 보내줘", "이거 머지하자", "create-pr" 요청 시 자동으로 실행한다.
+description: 현재 브랜치의 변경사항을 분석해 PR 초안을 생성하고, E2E 테스트(있는 경우) 통과 후 GitHub PR을 생성한다. "PR 만들어줘", "PR 올려줘", "PR 보내줘", "이거 머지하자", "create-pr" 요청 시 자동으로 실행한다.
 disable-model-invocation: true
 allowed-tools: Read Bash Glob Grep
 ---
@@ -46,7 +46,7 @@ git diff main...HEAD -- src/
 
 ## Test plan
 - [ ] npm test 통과
-- [ ] npm run test:e2e 통과
+- [ ] npm run test:e2e 통과 (test:e2e 스크립트가 있는 경우)
 - (기능별 수동 확인 항목 추가)
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
@@ -64,6 +64,15 @@ git diff main...HEAD -- src/
 ---
 
 ## 단계 3: E2E 테스트 실행
+
+`package.json`에 `test:e2e` 스크립트가 존재하는지 먼저 확인한다:
+
+```bash
+node -e "const p=require('./package.json'); process.exit(p.scripts&&p.scripts['test:e2e']?0:1)"
+```
+
+- **스크립트가 없으면**: "test:e2e 스크립트가 없습니다. E2E 게이트를 건너뜁니다." 를 출력하고 단계 5로 진행한다.
+- **스크립트가 있으면**: 아래 명령을 실행한다.
 
 ```bash
 npm run test:e2e

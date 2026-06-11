@@ -1,31 +1,33 @@
 ---
 name: tdd-green
 description: 실패 중인 테스트를 통과시키는 최소한의 구현 코드를 작성한다. tdd-red 이후 Green 단계 시작 시 사용한다.
-argument-hint: <feature> <이슈 번호>
+argument-hint: <이슈 번호>
 allowed-tools: Read Write Bash Edit
 ---
 
-`$ARGUMENTS`에서 feature 이름과 이슈 번호를 파싱해, tdd-red가 작성한 실패 테스트를 통과시키는 최소 구현 코드를 작성한다.
+`$ARGUMENTS`에서 이슈 번호를 파싱해, tdd-red가 작성한 실패 테스트를 통과시키는 최소 구현 코드를 작성한다.
 
 ## 시작 전
 
 ### 인자 파싱
 
-`$ARGUMENTS`를 공백으로 분리해 첫 번째 토큰을 `{feature}`, 두 번째 토큰을 `{issue}`로 사용한다.
+`$ARGUMENTS`를 이슈 번호(`{issue}`)로 사용한다.
 
-| 입력 예시             | feature  | issue |
-| --------------------- | -------- | ----- |
-| `/tdd-green tag 2`    | `tag`    | `2`   |
-| `/tdd-green search 1` | `search` | `1`   |
+`{feature}`는 현재 브랜치명에서 추출한다:
 
-누락된 값이 있으면 실행 전에 사용자에게 질문한다.
+```bash
+git branch --show-current
+```
 
-- `{feature}`가 없으면: "어떤 기능의 이슈인가요? (예: tag, search, ...)"
-- `{issue}`가 없으면: "이슈 번호를 알려주세요."
+- `feature/<spec>-issue-N` 형태이면 `<spec>` 부분을 `{feature}`로 사용한다.
+- `feature/<spec>` 형태이면 `<spec>` 부분을 `{feature}`로 사용한다 (`feature/` 제거).
+- 추출이 불가능하면 사용자에게 질문한다: "어떤 기능의 이슈인가요? (예: tag, search)"
+
+`{issue}`가 없으면: "이슈 번호를 알려주세요."
 
 두 값이 확정된 뒤 `docs/features/{feature}/issue-{issue}.md`를 읽어 시그니처와 시나리오 체크박스 목록을 파악한다.
 
-파일이 없으면 즉시 멈추고 사용자에게 알린다 (`/tdd-red {feature} {issue}`를 먼저 실행해야 한다는 안내 포함).
+파일이 없으면 즉시 멈추고 사용자에게 알린다 (`/tdd-red {issue}`를 먼저 실행해야 한다는 안내 포함).
 
 ---
 
