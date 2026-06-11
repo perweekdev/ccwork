@@ -15,7 +15,7 @@
 **완료 조건 (Acceptance Criteria)**
 
 - `NoteList`에 `searchQuery: string` 로컬 state가 존재한다.
-- 검색 입력창이 "New Note" 버튼 아래 사이드바 상단에 배치된다.
+- 검색 입력창이 사이드바 최상단(노트 목록 위)에 배치된다.
 - 입력창의 placeholder가 `"노트 검색..."`이다.
 - 입력할 때마다 `title`과 `content` 모두를 대상으로 필터링된다.
 - 검색어와 노트 데이터를 모두 소문자로 변환 후 비교한다 (대소문자 무시).
